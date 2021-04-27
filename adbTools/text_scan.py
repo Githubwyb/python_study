@@ -109,23 +109,22 @@ def getImg(img_path):
     margin_color = [241, 241, 241]
 
     button_list = []
-    i = 400
-    while i < 1920:
+    i = 40
+    while i < 190:
         # 找按钮
-        if (img[i][540] == button_color).all(): # and (img[i + 5][540] == button_color).any() and (img[i + 10][540] == button_color).any():
-            i += 10
-            button_list.append(i)
+        if (img[i * 10][540] == button_color).all():
+            button_list.append(i * 10 + 5)
 
             # 找白框
-            while i < 1920:
-                if (img[i][540] == margin_color).all():
+            while i < 190:
+                if (img[i * 10][540] == margin_color).all():
                     break
                 i += 1
         i += 1
     print(button_list)
     return button_list
 
-target_num = 847
+target_num = 986
 if __name__ == '__main__':
 
     # 获取access token
@@ -155,10 +154,12 @@ if __name__ == '__main__':
 
         # 解析文字内容
         if "开始挑战" in text:
+            print("开始")
             os.system('adb shell input tap 540 1400')
             continue
 
         if "获取积分" in text:
+            print("获取积分")
             temp = re.findall(r"获取积分:\d+",text)
             temp = re.findall(r"\d+",temp[0])
             target_num -= int(temp[0])
@@ -168,18 +169,20 @@ if __name__ == '__main__':
 
         tap_list = getImg('imgs/' + filename)
         if len(tap_list) == 0:
+            # 可能图片还没加载，这里跳过
             continue
 
         # 单选选A
         if "单选" in text:
+            print("单选", tap_list[0])
             cmd = "input tap 540 " + str(tap_list[0]) + "; " + next_qu
             os.system('adb shell "' + cmd + '"')
             continue
 
-        if "多选" in text:
-            cmd = ""
-            for tap_pos in tap_list:
-                cmd += 'input tap 540 ' + str(tap_pos) + "; "
-            cmd += 'input tap 900 1900'
-            os.system('adb shell "' + cmd + '"')
-            continue
+        # 默认按照多选来
+        print("多选", tap_list)
+        cmd = ""
+        for tap_pos in tap_list:
+            cmd += 'input tap 540 ' + str(tap_pos) + "; "
+        cmd += next_qu
+        os.system('adb shell "' + cmd + '"')
