@@ -124,7 +124,12 @@ def getImg(img_path):
     print(button_list)
     return button_list
 
-target_num = 986
+if len(sys.argv) != 2:
+    print("Please input target_num")
+    exit()
+
+target_num = int(sys.argv[1])
+print("target_num", target_num)
 if __name__ == '__main__':
 
     # 获取access token
@@ -141,47 +146,40 @@ if __name__ == '__main__':
         filename = 'img_' + str(index) + '.png'
         os.system('adb pull /sdcard/capture.png imgs/'+ filename)
         index += 1
-
-        # 读取图片解析
-        file_content = read_file('imgs/' + filename)
-        # 调用文字识别服务
-        result = request(image_url, urlencode({'image': base64.b64encode(file_content)}))
-        result_json = json.loads(result)
-        # print(result_json)
-        text = ""
-        for words_result in result_json["words_result"]:
-            text = text + words_result["words"]
-
-        # 解析文字内容
-        if "开始挑战" in text:
-            print("开始")
-            os.system('adb shell input tap 540 1400')
-            continue
-
-        if "获取积分" in text:
-            print("获取积分")
-            temp = re.findall(r"获取积分:\d+",text)
-            temp = re.findall(r"\d+",temp[0])
-            target_num -= int(temp[0])
-            os.system('adb shell input tap 540 1300')
-            print(target_num)
-            continue
-
         tap_list = getImg('imgs/' + filename)
         if len(tap_list) == 0:
-            # 可能图片还没加载，这里跳过
-            continue
+            # 读取图片解析
+            file_content = read_file('imgs/' + filename)
+            # 调用文字识别服务
+            result = request(image_url, urlencode({'image': base64.b64encode(file_content)}))
+            if result == None:
+                continue
 
-        # 单选选A
-        if "单选" in text:
-            print("单选", tap_list[0])
-            cmd = "input tap 540 " + str(tap_list[0]) + "; " + next_qu
-            os.system('adb shell "' + cmd + '"')
+            result_json = json.loads(result)
+            # print(result_json)
+            text = ""
+            for words_result in result_json["words_result"]:
+                text = text + words_result["words"]
+
+            # 解析文字内容
+            if "开始挑战" in text:
+                print("开始")
+                os.system('adb shell input tap 540 1400')
+                continue
+
+            if "获取积分" in text:
+                print("获取积分")
+                temp = re.findall(r"获取积分:\d+",text)
+                temp = re.findall(r"\d+",temp[0])
+                target_num -= int(temp[0])
+                os.system('adb shell input tap 540 1300')
+                print(target_num)
             continue
 
         # 默认按照多选来
-        print("多选", tap_list)
+        print("选择", tap_list)
         cmd = ""
+        tap_list = reversed(tap_list)
         for tap_pos in tap_list:
             cmd += 'input tap 540 ' + str(tap_pos) + "; "
         cmd += next_qu
